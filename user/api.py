@@ -5,16 +5,16 @@ from django.http import JsonResponse
 from common import errors, keys
 from lib.http import render_json
 from lib.sms import send_sms
+from user.forms import ProfileModelForm
+from user.logic import handle_upload
 from user.models import User
 
 
 def submit_phone(request):
-    '''提交手机号码, 发送验证码'''
+    """提交手机号码, 发送验证码"""
     phone = request.POST.get('phone')
-    #发送验证码
-    status, msg = send_sms(phone)
-    if not status:
-        return render_json(code=errors.SMS_ERROR, data='短信发送失败')
+    # 发送验证码
+    send_sms.delay(phone)
     return render_json()
 
 
@@ -22,7 +22,7 @@ def submit_vcode(request):
     phone = request.POST.get('phone')
     vcode = request.POST.get('vcode')
 
-    #从缓存中取出数据
+    # 从缓存中取出数据
     cached_vcode = cache.get(keys.VCODE_KEY % phone)
     if vcode == cached_vcode:
         user, _ = User.objects.get_or_create(phonenum=phone, defaults={'nickname': phone})
@@ -33,8 +33,22 @@ def submit_vcode(request):
 
 
 def get_profile(request):
-    uid = request.session.get('uid')
-    if not uid:
-        return render_json(code=errors.LOGIIN_REQUIRED, data='请登录')
-    user = User.objects.get(id=uid)
-    return render_json(data=user.profile.to_dict())
+    return render_json(data=request.user.profile.to_dict())
+
+
+def edit_profile(request):
+    form = ProfileModelForm(request.POST)
+    if form.is_valid():
+        profile = form.save(commit=False)
+        uid = request.user.id
+        profile.id = uid
+        profile.save()
+        return render_json(data=profile.to_dict())
+    return render_json(code=errors.PROFILE_ERROR, data=form.errors)
+
+
+def upload_aavatar(request):
+    avatar = request.FIles.get('avatar')
+    user = request.user
+    handle_upload.delay(user, avatar)
+    return render_json()

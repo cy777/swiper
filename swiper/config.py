@@ -10,3 +10,8 @@ YZX_PARAMS = {
     "param": None,
     "mobile": None,
     }
+
+#七牛云配置
+QN_AK = ''
+QN_SK = ''
+QN_URL = 'http://q2stp7nhn.bkt.clouddn.com/'
