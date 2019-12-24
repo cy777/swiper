@@ -34,7 +34,8 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'user'
+    'user',
+    'social'
 ]
 
 MIDDLEWARE = [
