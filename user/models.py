@@ -1,7 +1,9 @@
 import datetime
 
 from django.db import models
+from django.core.cache import cache
 
+from common import keys
 from lib.mixins import ModelMixin
 
 
@@ -34,7 +36,11 @@ class User(models.Model):
 
     @property
     def profile(self):
-        profile, _ = Profile.objects.get_or_create(id=self.id)
+        key = keys.PROFILE_KEY % self.id
+        profile = cache.get(key)
+        if not profile:
+            profile, _ = Profile.objects.get_or_create(id=self.id)
+            cache.set(key, profile, timeout=86400 * 14)
         return profile
 
     def to_dict(self):
